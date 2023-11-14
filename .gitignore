@@ -1,0 +1,6 @@
+.idea
+poetry.lock
+.env
+.streamlit
+__pycache__/
+__pypackages__/
