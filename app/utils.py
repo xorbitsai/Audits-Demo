@@ -23,3 +23,13 @@ def build_title_for_document(document: DocumentSchema) -> str:
     if document.metadata is not None:
         return f"{document.metadata.document_description}"
     return "没有标题"
+
+
+def get_doc_contents(documents: List[DocumentSchema]):
+    loaded_documents = []
+    for doc in documents:
+        reader = PDFReader()
+        loaded = reader.load_data(Path(doc.url), extra_info={DOC_ID_KEY: str(doc.id)})
+        loaded_documents.extend([v.text for v in loaded])
+    content_str = "\n".join(loaded_documents)
+    return content_str
