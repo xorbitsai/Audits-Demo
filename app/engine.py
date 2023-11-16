@@ -79,7 +79,7 @@ def get_service_context(callback_handlers):
     )
 
 
-def get_chat_engine(documents: List[DocumentSchema], rules: List[str]) -> OpenAI:
+def get_chat_engine() -> OpenAI:
     chat_engine = OpenAI(
         temperature=0,
         model_name="gpt-3.5-turbo-0613",

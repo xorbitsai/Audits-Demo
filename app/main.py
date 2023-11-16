@@ -24,8 +24,12 @@ def rule_add():
     st.session_state.rule_added = True
 
 
-def audit_start():
-    st.session_state.audit_start = True
+def text_start():
+    st.session_state.text_start = True
+
+
+def file_start():
+    st.session_state.file_start = True
 
 
 def init_page():
@@ -77,63 +81,76 @@ def get_rules():
 
 
 def init_engine():
+    if "text_start" not in st.session_state:
+        st.session_state.text_start = False
+    if "file_start" not in st.session_state:
+        st.session_state.file_start = False
     if "engine" not in st.session_state:
-        text, file = st.tabs(["文本输入", "文件上传"])
+        st.session_state.engine = get_chat_engine()
+    text, file = st.tabs(["文本输入", "文件上传"])
+    with text:
+        st.text_area(label="待审计的文本", key="text")
+        st.button("开始", key='text_button', on_click=text_start)
 
-        with file:
-            st.warning("上传需审计的文档，格式为PDF")
-            st.warning("文档不会持久化，下次进入时需要重新上传文件")
+        if st.session_state.text_start:
             rules = get_rules()
-            if uploaded_files := handle_uploaded_file():
-                documents = []
-                for uploaded_file in uploaded_files:
-                    temp_dir = tempfile.mkdtemp()
-                    file_path = os.path.join(temp_dir, uploaded_file.name)
-                    with open(file_path, "wb") as f:
-                        f.write(uploaded_file.getvalue())
-                    documents.append(
-                        Document(
-                            url=file_path,
-                            metadata=FundDocumentMetadata(
-                                document_description=uploaded_file.name
-                            ),
-                        )
-                    )
+            messages = [
+                ChatMessage(role="system", content=f"{get_sys_prompt(rules)}"),
+                ChatMessage(
+                    role="user",
+                    content=f"请针对以下文本给出修改意见: \n{st.session_state.text}",
+                ),
+            ]
+            with st.chat_message("assistant"):
+                with st.spinner("请稍等..."):
+                    engine_response = st.session_state.engine.chat(messages)
+                    st.write(engine_response)
 
-                    logger.info(
-                        f"File {uploaded_file.name} has been written to {file_path}"
+    with file:
+        st.warning("上传需审计的文档，格式为PDF")
+        st.warning("文档不会持久化，下次进入时需要重新上传文件")
+        if uploaded_files := handle_uploaded_file():
+            documents = []
+            for uploaded_file in uploaded_files:
+                temp_dir = tempfile.mkdtemp()
+                file_path = os.path.join(temp_dir, uploaded_file.name)
+                with open(file_path, "wb") as f:
+                    f.write(uploaded_file.getvalue())
+                documents.append(
+                    Document(
+                        url=file_path,
+                        metadata=FundDocumentMetadata(
+                            document_description=uploaded_file.name
+                        ),
                     )
-                with st.spinner("读取文档，请耐心等待..."):
-                    st.session_state.engine = get_chat_engine(documents, rules)
-                    st.session_state.documents = documents
-                    st.success("文档读取完毕!")
+                )
 
-        with text:
-            st.text_area(label="待审计的文本", key="text")
+                logger.info(
+                    f"File {uploaded_file.name} has been written to {file_path}"
+                )
+            with st.spinner("读取文档，请耐心等待..."):
+                st.session_state.documents = documents
+                st.success("文档读取完毕!")
+            st.button("开始", key='file_button', on_click=file_start)
+
+            if st.session_state.file_start:
+                rules = get_rules()
+                messages = [
+                    ChatMessage(role="system", content=f"{get_sys_prompt(rules)}"),
+                    ChatMessage(
+                        role="user",
+                        content=f"请针对以下文本给出修改意见: \n{get_doc_contents(st.session_state.documents)}",
+                    ),
+                ]
+                with st.chat_message("assistant"):
+                    with st.spinner("请稍等..."):
+                        engine_response = st.session_state.engine.chat(messages)
+                        st.write(engine_response)
 
 
 def main():
     init_page()
     init_engine()
-
-    if "audit_start" not in st.session_state:
-        st.session_state.audit_start = False
-
-    st.button("开始", on_click=audit_start)
-
-    if st.session_state.audit_start:
-        rules = get_rules()
-        messages = [
-            ChatMessage(role="system", content=f"{get_sys_prompt(rules)}"),
-            ChatMessage(
-                role="user",
-                content=f"请针对以下文本给出修改意见: \n{get_doc_contents(st.session_state.documents)}",
-            ),
-        ]
-        with st.chat_message("assistant"):
-            with st.spinner("请稍等..."):
-                engine_response = st.session_state.engine.chat(messages)
-                st.write(engine_response)
 
 
 if __name__ == "__main__":
