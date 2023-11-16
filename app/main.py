@@ -53,9 +53,6 @@ def init_page():
                 _rule = side_bar.text_input(
                     f"规则{i + 1}", key=f"rule{i}", on_change=None
                 )
-            print(f"New rule: {_rule}")
-    st.warning("上传需审计的文档，格式为PDF")
-    st.warning("文档不会持久化，下次进入时需要重新上传文件")
 
 
 def handle_uploaded_file():
@@ -81,32 +78,38 @@ def get_rules():
 
 def init_engine():
     if "engine" not in st.session_state:
-        rules = get_rules()
-        print(f"===============Rules:")
-        print(rules, st.session_state["rule_cnt"])
-        if uploaded_files := handle_uploaded_file():
-            documents = []
-            for uploaded_file in uploaded_files:
-                temp_dir = tempfile.mkdtemp()
-                file_path = os.path.join(temp_dir, uploaded_file.name)
-                with open(file_path, "wb") as f:
-                    f.write(uploaded_file.getvalue())
-                documents.append(
-                    Document(
-                        url=file_path,
-                        metadata=FundDocumentMetadata(
-                            document_description=uploaded_file.name
-                        ),
-                    )
-                )
+        text, file = st.tabs(["文本输入", "文件上传"])
 
-                logger.info(
-                    f"File {uploaded_file.name} has been written to {file_path}"
-                )
-            with st.spinner("读取文档，请耐心等待..."):
-                st.session_state.engine = get_chat_engine(documents, rules)
-                st.session_state.documents = documents
-                st.success("文档读取完毕!")
+        with file:
+            st.warning("上传需审计的文档，格式为PDF")
+            st.warning("文档不会持久化，下次进入时需要重新上传文件")
+            rules = get_rules()
+            if uploaded_files := handle_uploaded_file():
+                documents = []
+                for uploaded_file in uploaded_files:
+                    temp_dir = tempfile.mkdtemp()
+                    file_path = os.path.join(temp_dir, uploaded_file.name)
+                    with open(file_path, "wb") as f:
+                        f.write(uploaded_file.getvalue())
+                    documents.append(
+                        Document(
+                            url=file_path,
+                            metadata=FundDocumentMetadata(
+                                document_description=uploaded_file.name
+                            ),
+                        )
+                    )
+
+                    logger.info(
+                        f"File {uploaded_file.name} has been written to {file_path}"
+                    )
+                with st.spinner("读取文档，请耐心等待..."):
+                    st.session_state.engine = get_chat_engine(documents, rules)
+                    st.session_state.documents = documents
+                    st.success("文档读取完毕!")
+
+        with text:
+            st.text_area(label="待审计的文本", key="text")
 
 
 def main():
