@@ -79,31 +79,11 @@ def get_service_context(callback_handlers):
     )
 
 
-def get_chat_engine(documents: List[DocumentSchema], rules: List[str]) -> BaseChatEngine:
-    """Custom a query engine for qa, retrieve all documents in one index."""
-    llama_debug = LlamaDebugHandler(print_trace_on_end=True)
-
-    service_context = get_service_context([llama_debug])
-
-    llama_index_docs = fetch_and_read_documents(documents)
-    logger.debug(llama_index_docs)
-    index = VectorStoreIndex.from_documents(
-        llama_index_docs,
-        service_context=service_context,
-    )
-
-    # memory = ChatMemoryBuffer.from_defaults(
-    #     token_limit=get_llm_max_tokens() * get_history_count()
-    # )
-
-    # CondenseQuestionChatEngine.from_defaults(
-    #     query_engine=index.as_query_engine()
-    # )
-
-    chat_engine = index.as_chat_engine(
-        chat_mode=ChatMode.CONTEXT,
-        # memory=memory,
-        context_template=get_context_prompt_template(documents),
-        system_prompt=get_sys_prompt(rules),
+def get_chat_engine(documents: List[DocumentSchema], rules: List[str]) -> OpenAI:
+    chat_engine = OpenAI(
+        temperature=0,
+        model_name="gpt-3.5-turbo-0613",
+        streaming=False,
+        api_key="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",
     )
     return chat_engine
