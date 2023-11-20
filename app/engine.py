@@ -35,7 +35,7 @@ def get_llm():
         temperature=0,
         model_name="gpt-3.5-turbo-0613",
         streaming=False,
-        api_key="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",
+        api_key="<API-KEY>",
     )
 
     return llm
@@ -45,7 +45,7 @@ def get_embedding_model():
     embedding = OpenAIEmbedding(
         mode=OpenAIEmbeddingMode.SIMILARITY_MODE,
         model_type=OpenAIEmbeddingModelType.TEXT_EMBED_ADA_002,
-        api_key="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",
+        api_key="<API-KEY>",
     )
 
     return embedding
@@ -84,6 +84,6 @@ def get_chat_engine() -> OpenAI:
         temperature=0,
         model_name="gpt-3.5-turbo-0613",
         streaming=False,
-        api_key="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",
+        api_key="<API-KEY>",
     )
     return chat_engine
