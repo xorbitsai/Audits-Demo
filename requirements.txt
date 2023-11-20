@@ -1,0 +1,8 @@
+pydantic
+streamlit
+fastapi
+uvicorn
+pypdf
+llama-index
+langchain
+nltk

@@ -1,6 +1,6 @@
 # Install
 ```bash
-poetry install
+pip install -r requirements.txt
 ```
 
 # Run
